@@ -66,7 +66,7 @@ recall = recall_score(labels_test, prediction)
 
 # Printing the results
 print("----------------------------------------------------------------------------------------------------")
-print("Test Accuracy:", acc_test)
+print("Test Accuracy:", accuracy)
 print ("Precision:", precision) 
 print ("Recall:", recall) 
 print("----------------------------------------------------------------------------------------------------")
