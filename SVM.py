@@ -46,7 +46,8 @@ print("Features extracted from dataset in " + str(end) + " seconds\n")
 features_train, features_test, labels_train, labels_test = train_test_split(data_features, data_labels, test_size=0.10, random_state=507) #Random_state is just a seed value. Can be any number
 
 # Making the SVM Classifer
-Classifier = SVC(kernel="linear")
+Classifier = SVC(kernel="sigmoid", verbose=True, degree=10, cache_size=4096)
+#Classifier = SVC(kernel="sigmoid", class_weight="balanced", verbose=True, degree=10, cache_size=4096)
 
 # Training the model 
 start = time.time()
