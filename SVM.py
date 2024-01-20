@@ -3,11 +3,15 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, precision_score 
+from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, precision_score, precision_recall_fscore_support
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction import DictVectorizer
 import time
 import joblib
+
+
+TRAINING_SIZE = 300000
+
 #Time entire program
 TrueStart=time.time()
 
@@ -43,41 +47,64 @@ end =  -1*(start-time.time())
 print("Features extracted from dataset in " + str(end) + " seconds\n")
 
 #Split data
-features_train, features_test, labels_train, labels_test = train_test_split(data_features, data_labels, test_size=0.10, random_state=507) #Random_state is just a seed value. Can be any number
+#features_train, features_test, labels_train, labels_test = train_test_split(data_features, data_labels, test_size=1-(TRAINING_SIZE/6362599), random_state=507, shuffle=True) #Random_state is just a seed value. Can be any number
+features_train, features_test, labels_train, labels_test = train_test_split(data_features, data_labels, test_size=0.2, random_state=507, shuffle=True) #Random_state is just a seed value. Can be any number
 
-# Making the SVM Classifer
-Classifier = SVC(kernel="sigmoid", verbose=True, degree=10, cache_size=4096)
-#Classifier = SVC(kernel="sigmoid", class_weight="balanced", verbose=True, degree=10, cache_size=4096)
+i=0
+array=[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
+while i<26:
+    CLASS_WEIGHTS = {0:1.0, 1:0.25*i + 53}
 
-# Training the model 
-start = time.time()
-print("Fitting SVM")
-Classifier.fit(features_train, labels_train)
-end =  -1*(start-time.time())
-print("SVM fit in " + str(end) + " seconds\n")
+    # Making the SVM Classifer
+    Classifier = SVC(kernel="rbf", verbose=False, cache_size=4096, class_weight=CLASS_WEIGHTS)
+    #Classifier = SVC(kernel="sigmoid", class_weight="balanced", verbose=True, degree=10, cache_size=4096)
 
-# Using the model to predict the labels of the test data
-prediction = Classifier.predict(features_test)
+    # Training the model 
+    start = time.time()
+    print("Fitting SVM")
+    Classifier.fit(features_train, labels_train)
+    end =  -1*(start-time.time())
+    print("SVM fit in " + str(end) + " seconds on i=" + str(i))
 
-# Evaluating the accuracy of the model using the sklearn functions
-accuracy = accuracy_score(labels_test,prediction)*100
-precision = precision_score(labels_test, prediction)
-recall = recall_score(labels_test, prediction)
-#confusion_mat = confusion_matrix(labels_test,labels_pred)
+    #start = time.time()
+    #print("Calculating metrics")
+    # Using the model to predict the labels of the test data
+    prediction = Classifier.predict(features_test)
 
-# Printing the results
-print("----------------------------------------------------------------------------------------------------")
-print("Test Accuracy:", accuracy)
-print ("Precision:", precision) 
-print ("Recall:", recall) 
-print("----------------------------------------------------------------------------------------------------")
+    # Evaluating the accuracy of the model using the sklearn functions
+    accuracy = accuracy_score(labels_test,prediction)*100
+    precision = precision_score(labels_test,prediction, zero_division=0)*100
+    recall = recall_score(labels_test,prediction)*100
+    #precision, recall, f_score = precision_recall_fscore_support(labels_test, prediction, average='weighted')
+    #end =  -1*(start-time.time())
+    #print("Metrics calculated in " + str(end) + " seconds")
+
+    # Printing the results
+    #print("----------------------------------------------------------------------------------------------------")
+    #print("Test Accuracy: ", accuracy)
+    #print ("Precision: ", precision) 
+    #print ("Recall: ", recall) 
+    #print("F-score: ", f_score)
+    #print("----------------------------------------------------------------------------------------------------")
+
+    #Save the classifier
+    #joblib.dump(Classifier, "./Classifier.joblib")
+
+    i+=1
+
+    #Example for how to load classifier
+    #loaded_classifier: SVC = joblib.load("./Classifier.joblib")
+
+    array[i] = (accuracy, precision, recall)
+    del Classifier, prediction, accuracy, recall, precision
+    
+print("\n\n")
+i=0
+while i<26:
+    inte = 0.25*i + 53
+    print("Test accuracy, precision, recall, with ratio 0:1, 1: " + str(inte) + " : ", array[i][0], "   ", array[i][1], "    ", array[i][2])
+    i+=1
 
 TrueEndSeconds = -1*(TrueStart-time.time())
 TrueEndMinutes = (TrueEndSeconds - TrueEndSeconds%60)/60
-print("\n\nTotal runtime: " + str(int(TrueEndMinutes)) + ":" + str(TrueEndSeconds%60))
-
-#Save the classifier
-joblib.dump(Classifier, "./Classifier.joblib")
-
-#Example for how to load classifier
-#loaded_classifier: SVC = joblib.load("./Classifier.joblib")
+print("Total runtime: " + str(int(TrueEndMinutes)) + ":" + str(TrueEndSeconds%60))
